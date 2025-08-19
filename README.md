@@ -8,6 +8,8 @@ Une solution de **gestion d’authentification JWT** pour React avec **Zustand**
 * Vérification de signature
 * Stockage persistant côté client (localStorage)
 
+> ⚠️ Ce package est conçu pour fonctionner **en tandem avec le package Laravel `andydefer/jwt`**, qui fournit l’API JWT côté serveur.
+
 ---
 
 ## 🚀 Installation
@@ -57,7 +59,7 @@ const MyComponent = () => {
 
 ### 2️⃣ Store `useAuthStore`
 
-Pour accéder directement aux fonctionnalités avancées ou pour des hooks personnalisés :
+Pour accéder directement aux fonctionnalités avancées ou créer des hooks personnalisés :
 
 ```ts
 import { useAuthStore } from 'andydefer-jwt';
@@ -84,11 +86,7 @@ login('email@example.com', 'password');
 | `logout()`                                   | `() => Promise<void>` | Déconnecte l’utilisateur              |
 | `register(name, email, password, deviceId?)` | `() => Promise<void>` | Enregistre un nouvel utilisateur      |
 
----
-
 ### `useAuthStore()`
-
-Le store expose toutes les fonctionnalités suivantes :
 
 | Nom                                          | Type                     | Description                                 |
 | -------------------------------------------- | ------------------------ | ------------------------------------------- |
@@ -118,28 +116,63 @@ jwt-auth-storage
 
 ---
 
+## 🧩 Intégration backend Laravel
+
+Pour que le package fonctionne correctement, installez le package Laravel `andydefer/jwt` :
+
+```bash
+composer require andydefer/jwt
+php artisan migrate
+php artisan vendor:publish --provider="AndyDefer\Jwt\JwtAuthServiceProvider" --tag="routes"
+```
+
+Configurez Axios dans votre front-end pour pointer vers les endpoints JWT Laravel :
+
+```ts
+import axios from 'axios';
+axios.defaults.baseURL = 'https://mon-domaine-laravel.com/api/jwt';
+axios.defaults.withCredentials = true;
+```
+
+---
+
+## 🛠 Workflow complet avec Makefile
+
+Ce projet inclut un **Makefile** pour automatiser tests, build, versionning et publication :
+
+```bash
+make install           # Installer les dépendances
+make test              # Lancer les tests
+make build             # Compiler le package
+make version-minor     # Incrémenter la version (patch/minor/major)
+make publish           # Publier sur npm
+make release-interactive  # Workflow complet : commit + tag + push + publication
+```
+
+---
+
 ## 📌 Notes importantes
 
 * Ce package nécessite **React 18+** et **Zustand**.
-* Le store est conçu pour fonctionner avec **Inertia.js** et une API JWT.
-* La méthode `initialize()` est appelée automatiquement dans le hook `useAuth`.
+* Compatible avec **Inertia.js** et une API JWT Laravel.
+* Ne jamais publier sur npm sans incrémenter la version.
+* Toujours initialiser le store via `initialize()` dans votre hook principal.
 
 ---
 
 ## 🧪 Tests
 
-Pour lancer les tests :
-
 ```bash
 npm test
 ```
 
-Assurez-vous d’avoir installé toutes les dépendances et configuré `jest` correctement.
+Assurez-vous d’avoir toutes les dépendances installées et `jest` configuré correctement.
 
 ---
 
 ## 💡 Bonnes pratiques
 
-* Toujours vérifier `isAuthenticated` avant de rendre des contenus protégés.
-* Utiliser `error` pour afficher les messages d’erreur utilisateur.
-* Ne pas exposer directement le `token` dans l’UI pour des raisons de sécurité.
+* Vérifier `isAuthenticated` avant de rendre des contenus protégés.
+* Utiliser `error` pour afficher les messages d’erreur.
+* Ne jamais exposer directement le `token` dans l’UI pour des raisons de sécurité.
+* Synchroniser régulièrement le front-end avec le backend Laravel.
