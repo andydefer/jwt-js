@@ -6,7 +6,7 @@
 PACKAGE_NAME = andydefer-jwt
 NPM_REGISTRY = https://registry.npmjs.org/
 REPO_URL = https://github.com/andydefer/jwt-js.git
-BRANCH   = main
+BRANCH   = master
 COMMIT_MSG ?= Update project
 
 # ================================
