@@ -87,7 +87,7 @@ release-interactive: ## Commit + push GitHub + version (patch/minor/major) + pub
 	if [ "$$TYPE" != "patch" ] && [ "$$TYPE" != "minor" ] && [ "$$TYPE" != "major" ]; then \
 		echo "❌ Type invalide !"; exit 1; \
 	fi; \
-	# Initialiser Git si nécessaire
+	# Vérifier si repo Git est initialisé
 	if [ ! -d ".git" ]; then \
 		echo "📌 Initialisation du repo Git..."; \
 		git init; \
@@ -98,30 +98,34 @@ release-interactive: ## Commit + push GitHub + version (patch/minor/major) + pub
 	if [ -n "$$(git status --porcelain)" ]; then \
 		echo "📌 Commit des changements..."; \
 		git add .; \
-		git commit -m '$(COMMIT_MSG)'; \
+		git commit -m "$(COMMIT_MSG)"; \
 	else \
 		echo "⚠️ Aucun changement à committer"; \
 	fi; \
 	# Pousser la branche
 	echo "📌 Push de la branche $(BRANCH)..."; \
-	git push -u origin $(BRANCH) || echo "⚠️ Pousser échoué (branche peut déjà exister)"; \
-	# Vérifier que le repo est clean avant npm version
-	if [ -n "$$(git status --porcelain)" ]; then \
-		echo "❌ Le repo Git n'est pas clean, commit ou stash vos changements avant npm version"; \
-		exit 1; \
-	fi; \
+	git push -u origin $(BRANCH) || echo "⚠️ Push échoué (branche peut déjà exister)"; \
+	# Récupérer la dernière version publiée
+	LATEST=$(shell npm view $(PACKAGE_NAME) version 2>/dev/null || echo "0.0.0"); \
+	echo "📦 Dernière version publiée : $$LATEST"; \
 	# Mettre à jour la version
 	echo "📌 Mise à jour de la version ($$TYPE)..."; \
-	npm version $$TYPE; \
+	npm version $$TYPE --no-git-tag-version; \
+	NEW_VER=$$(node -p "require('./package.json').version"); \
+	echo "📦 Nouvelle version locale : $$NEW_VER"; \
+	# Commit et tag Git
+	git add package.json package-lock.json; \
+	git commit -m "Release $$NEW_VER"; \
+	git tag -a $$NEW_VER -m "Release $$NEW_VER"; \
 	# Publier sur npm
 	echo "📌 Publication sur npm..."; \
 	npm publish --access public --registry=$(NPM_REGISTRY); \
-	# Créer et push le tag
-	VERSION=`node -p "require('./package.json').version"`; \
-	echo "📌 Création et push du tag $$VERSION..."; \
-	git tag -a $$VERSION -m "Release $$VERSION"; \
-	git push origin $$VERSION; \
-	echo "✅ Release complète terminée (version $$VERSION)"
+	# Push tag
+	echo "📌 Push du tag $$NEW_VER..."; \
+	git push origin $(BRANCH); \
+	git push origin $$NEW_VER; \
+	echo "✅ Release complète terminée (version $$NEW_VER)"
+
 
 # ================================
 # Help automatique
