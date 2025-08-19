@@ -1,75 +1,133 @@
 # ================================
-# Makefile pour automatiser npm
+# Makefile complet : npm + GitHub
 # ================================
 
 # Variables
 PACKAGE_NAME = andydefer-jwt
 NPM_REGISTRY = https://registry.npmjs.org/
+REPO_URL = https://github.com/andydefer/jwt-js.git
+BRANCH   = main
+COMMIT_MSG ?= Update project
 
 # ================================
-# Commandes principales
+# Commandes npm
 # ================================
 
-# Nettoyer les dépendances et cache
-clean:
+clean: ## Nettoyer node_modules et cache
 	rm -rf node_modules package-lock.json
 	npm cache clean --force
 	@echo "✅ Nettoyage terminé."
 
-# Installer les dépendances
-install:
+install: ## Installer les dépendances
 	npm install
 	@echo "✅ Dépendances installées."
 
-# Lancer les tests
-test:
+test: ## Lancer les tests
 	npm test
 
-# Build du package (si tu as un step build, sinon inutile)
-build:
+build: ## Compiler le package
 	npm run build || echo "ℹ️ Aucun build script défini."
 
-# Vérifier la version publiée
-check-version:
+check-version: ## Vérifier la version locale et distante
 	@echo "📦 Version locale : `node -p "require('./package.json').version"`"
 	@echo "🌍 Version publiée : `npm view $(PACKAGE_NAME) version`"
 
-# Mettre à jour la version (patch, minor ou major)
-version-patch:
+version-patch: ## Augmenter la version (patch)
 	npm version patch
 
-version-minor:
+version-minor: ## Augmenter la version (minor)
 	npm version minor
 
-version-major:
+version-major: ## Augmenter la version (major)
 	npm version major
 
-# Publier le package sur npm
-publish: test build
+publish: test build ## Publier le package sur npm
 	npm publish --access public --registry=$(NPM_REGISTRY)
 	@echo "🚀 Publication réussie."
 
-# Automatisation complète (tests + version patch + publication)
-release-patch: clean install test build version-patch publish
+release-patch: clean install test build version-patch publish ## Release complète (patch)
+release-minor: clean install test build version-minor publish ## Release complète (minor)
+release-major: clean install test build version-major publish ## Release complète (major)
 
-release-minor: clean install test build version-minor publish
+# ================================
+# Commandes GitHub / Git
+# ================================
 
-release-major: clean install test build version-major publish
+init-github: ## Initialiser le repo local et pousser sur GitHub
+	git init
+	git add .
+	git commit -m 'Initial commit'
+	git branch -M $(BRANCH)
+	git remote add origin $(REPO_URL)
+	git push -u origin $(BRANCH)
 
-# Aide
-help:
-	@echo ""
+push: ## Ajouter tous les changements, commit et push
+	git add .
+	git commit -m '$(COMMIT_MSG)'
+	git push origin $(BRANCH)
+
+tag: ## Créer un tag de version et pousser (usage: make tag VERSION=x.y.z)
+	@git tag -a $(VERSION) -m "Release $(VERSION)"
+	git push origin $(VERSION)
+
+update-docs: ## Mettre à jour la documentation et push
+	git add README.md Makefile.md
+	git commit -m 'Update documentation'
+	git push origin $(BRANCH)
+
+feature: ## Créer une nouvelle branche feature (usage: make feature NAME=branch-name)
+	git checkout -b $(NAME)
+
+# ================================
+# Release interactif
+# ================================
+
+release-interactive: ## Commit + push GitHub + version (patch/minor/major) + publish npm + tag
+	@read -p "Quel type de version ? (patch, minor, major) : " TYPE; \
+	if [ "$$TYPE" != "patch" ] && [ "$$TYPE" != "minor" ] && [ "$$TYPE" != "major" ]; then \
+		echo "❌ Type invalide !"; exit 1; \
+	fi; \
+	# Initialiser Git si nécessaire
+	if [ ! -d ".git" ]; then \
+		echo "📌 Initialisation du repo Git..."; \
+		git init; \
+		git branch -M $(BRANCH); \
+		git remote add origin $(REPO_URL); \
+	fi; \
+	# Commit des changements si présents
+	if [ -n "$$(git status --porcelain)" ]; then \
+		echo "📌 Commit des changements..."; \
+		git add .; \
+		git commit -m '$(COMMIT_MSG)'; \
+	else \
+		echo "⚠️ Aucun changement à committer"; \
+	fi; \
+	# Pousser la branche
+	echo "📌 Push de la branche $(BRANCH)..."; \
+	git push -u origin $(BRANCH) || echo "⚠️ Pousser échoué (branche peut déjà exister)"; \
+	# Vérifier que le repo est clean avant npm version
+	if [ -n "$$(git status --porcelain)" ]; then \
+		echo "❌ Le repo Git n'est pas clean, commit ou stash vos changements avant npm version"; \
+		exit 1; \
+	fi; \
+	# Mettre à jour la version
+	echo "📌 Mise à jour de la version ($$TYPE)..."; \
+	npm version $$TYPE; \
+	# Publier sur npm
+	echo "📌 Publication sur npm..."; \
+	npm publish --access public --registry=$(NPM_REGISTRY); \
+	# Créer et push le tag
+	VERSION=`node -p "require('./package.json').version"`; \
+	echo "📌 Création et push du tag $$VERSION..."; \
+	git tag -a $$VERSION -m "Release $$VERSION"; \
+	git push origin $$VERSION; \
+	echo "✅ Release complète terminée (version $$VERSION)"
+
+# ================================
+# Help automatique
+# ================================
+help: ## Afficher l'aide
 	@echo "📌 Commandes disponibles :"
-	@echo "  make clean            -> Nettoyer node_modules et cache"
-	@echo "  make install          -> Installer les dépendances"
-	@echo "  make test             -> Lancer les tests"
-	@echo "  make build            -> Compiler le package"
-	@echo "  make check-version    -> Vérifier la version locale et distante"
-	@echo "  make version-patch    -> Augmenter la version (patch)"
-	@echo "  make version-minor    -> Augmenter la version (minor)"
-	@echo "  make version-major    -> Augmenter la version (major)"
-	@echo "  make publish          -> Publier sur npm"
-	@echo "  make release-patch    -> Test + build + patch + publish"
-	@echo "  make release-minor    -> Test + build + minor + publish"
-	@echo "  make release-major    -> Test + build + major + publish"
-	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+		| sort \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "  %-30s -> %s\n", $$1, $$2}'

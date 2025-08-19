@@ -1,1 +1,42 @@
-node_modules
+
+# Node modules
+node_modules/
+
+# Build / distribution
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environnement
+.env
+.env.local
+.env.*.local
+/.token
+
+
+# Tests / coverage
+coverage/
+*.lcov
+
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# MacOS / system files
+.DS_Store
+Thumbs.db
+
+# Package lock
+package-lock.json
+yarn.lock
+
+# Makefile / doc si tu veux les garder locaux mais pas publier sur npm
+# tu peux les garder dans GitHub, donc ne pas les exclure ici
+# Makefile
+# Makefile.md
