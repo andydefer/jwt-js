@@ -1,0 +1,25 @@
+# Exclure Makefile et sa doc
+Makefile
+Makefile.md
+jest.config.js
+
+# Exclure d’autres fichiers inutiles
+tests/
+docs/
+
+# Exclure les fichiers de config et d’outils de dev
+.gitignore
+.gitattributes
+.editorconfig
+.eslintrc.js
+.prettierrc
+.vscode/
+
+# Exclure les fichiers générés ou temporaires
+node_modules/
+coverage/
+
+# Exclure les fichiers liés à l’intégration continue
+.github/
+.gitlab-ci.yml
+.travis.yml
