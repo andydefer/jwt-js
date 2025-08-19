@@ -87,14 +87,13 @@ release-interactive: ## Commit + push GitHub + version (patch/minor/major) + pub
 	if [ "$$TYPE" != "patch" ] && [ "$$TYPE" != "minor" ] && [ "$$TYPE" != "major" ]; then \
 		echo "❌ Type invalide !"; exit 1; \
 	fi; \
-	# Vérifier si repo Git est initialisé
+	BRANCH_CUR=$$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "$(BRANCH)"); \
 	if [ ! -d ".git" ]; then \
 		echo "📌 Initialisation du repo Git..."; \
 		git init; \
-		git branch -M $(BRANCH); \
+		git branch -M $$BRANCH_CUR; \
 		git remote add origin $(REPO_URL); \
 	fi; \
-	# Commit des changements si présents
 	if [ -n "$$(git status --porcelain)" ]; then \
 		echo "📌 Commit des changements..."; \
 		git add .; \
@@ -102,30 +101,31 @@ release-interactive: ## Commit + push GitHub + version (patch/minor/major) + pub
 	else \
 		echo "⚠️ Aucun changement à committer"; \
 	fi; \
-	# Pousser la branche
-	echo "📌 Push de la branche $(BRANCH)..."; \
-	git push -u origin $(BRANCH) || echo "⚠️ Push échoué (branche peut déjà exister)"; \
-	# Récupérer la dernière version publiée
-	LATEST=$(shell npm view $(PACKAGE_NAME) version 2>/dev/null || echo "0.0.0"); \
+	if [ -n "$$(git status --porcelain)" ]; then \
+		echo "❌ Le repo n'est pas clean. Commit ou stash vos changements."; exit 1; \
+	fi; \
+	LATEST=$$(npm view $(PACKAGE_NAME) version 2>/dev/null || echo "0.0.0"); \
 	echo "📦 Dernière version publiée : $$LATEST"; \
-	# Mettre à jour la version
-	echo "📌 Mise à jour de la version ($$TYPE)..."; \
-	npm version $$TYPE --no-git-tag-version; \
-	NEW_VER=$$(node -p "require('./package.json').version"); \
+	NEW_VER=$$(npm version $$TYPE --no-git-tag-version | sed 's/^v//'); \
 	echo "📦 Nouvelle version locale : $$NEW_VER"; \
-	# Commit et tag Git
 	git add package.json package-lock.json; \
 	git commit -m "Release $$NEW_VER"; \
-	git tag -a $$NEW_VER -m "Release $$NEW_VER"; \
-	# Publier sur npm
-	echo "📌 Publication sur npm..."; \
-	npm publish --access public --registry=$(NPM_REGISTRY); \
-	# Push tag
-	echo "📌 Push du tag $$NEW_VER..."; \
-	git push origin $(BRANCH); \
-	git push origin $$NEW_VER; \
+	if git rev-parse "refs/tags/$$NEW_VER" >/dev/null 2>&1; then \
+		echo "⚠️ Tag $$NEW_VER existe déjà, utilisation de -f pour forcer"; \
+		git tag -f -a $$NEW_VER -m "Release $$NEW_VER"; \
+	else \
+		git tag -a $$NEW_VER -m "Release $$NEW_VER"; \
+	fi; \
+	echo "📌 Push de la branche et du tag..."; \
+	git push origin $$BRANCH_CUR; \
+	git push origin $$NEW_VER --force; \
+	if [ "$$LATEST" != "$$NEW_VER" ]; then \
+		echo "📌 Publication sur npm..."; \
+		npm publish --access public --registry=$(NPM_REGISTRY); \
+	else \
+		echo "⚠️ Version $$NEW_VER déjà publiée sur npm, publication ignorée"; \
+	fi; \
 	echo "✅ Release complète terminée (version $$NEW_VER)"
-
 
 # ================================
 # Help automatique
