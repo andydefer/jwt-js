@@ -6,8 +6,11 @@ const authStore_1 = require("../stores/authStore");
 const useAuth = () => {
     const { token, user, isLoading, error, login, logout, register, initialize, isInitialized, } = (0, authStore_1.useAuthStore)();
     (0, react_1.useEffect)(() => {
-        if (!isInitialized)
-            initialize();
+        if (!isInitialized) {
+            initialize().catch(() => {
+                // On ignore les erreurs d'auto-login
+            });
+        }
     }, [initialize, isInitialized]);
     return {
         isAuthenticated: !!token,
@@ -15,8 +18,8 @@ const useAuth = () => {
         isLoading,
         error,
         login,
-        logout,
         register,
+        logout,
     };
 };
 exports.useAuth = useAuth;

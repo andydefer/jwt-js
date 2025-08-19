@@ -5,7 +5,6 @@ export interface User {
 }
 export interface AuthState {
     token: string | null;
-    publicKey: string | null;
     user: User | null;
     isLoading: boolean;
     error: string | null;
@@ -15,6 +14,5 @@ export interface AuthState {
     register: (name: string, email: string, password: string, deviceId?: string) => Promise<void>;
     logout: () => void;
     fetchUser: () => Promise<void>;
-    verifySignature: (data: string, signature: string) => Promise<boolean>;
-    getTokenFromSession: () => Promise<void>;
+    refreshToken: () => Promise<void>;
 }

@@ -19,7 +19,6 @@ const zustand_1 = require("zustand");
 const middleware_1 = require("zustand/middleware");
 exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, get) => ({
     token: null,
-    publicKey: null,
     user: null,
     isLoading: false,
     error: null,
@@ -32,20 +31,17 @@ exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, g
             const storedToken = get().token;
             if (storedToken) {
                 yield get().fetchUser();
-                set({ isInitialized: true });
-                return;
             }
-            yield get().getTokenFromSession();
         }
-        catch (error) {
-            console.log('Auto-login failed, user not authenticated');
+        catch (_a) {
+            set({ token: null, user: null });
         }
         finally {
             set({ isLoading: false, isInitialized: true });
         }
     }),
     login: (email, password, deviceId) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b;
+        var _a, _b, _c;
         set({ isLoading: true, error: null });
         try {
             const response = yield axios_1.default.post('/jwt/login', {
@@ -53,24 +49,19 @@ exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, g
                 password,
                 device_id: deviceId || crypto.randomUUID(),
             });
-            set({
-                token: response.data.data.token,
-                publicKey: response.data.data.public_key,
-                isLoading: false,
-                isInitialized: true,
-            });
+            const token = response.data.token || ((_a = response.data.data) === null || _a === void 0 ? void 0 : _a.token);
+            if (!token)
+                throw new Error('Token not returned');
+            set({ token, isLoading: false, isInitialized: true });
             yield get().fetchUser();
         }
         catch (error) {
-            set({
-                error: ((_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.message) || 'Login failed',
-                isLoading: false,
-            });
+            set({ error: ((_c = (_b = error.response) === null || _b === void 0 ? void 0 : _b.data) === null || _c === void 0 ? void 0 : _c.message) || 'Login failed', isLoading: false });
             throw error;
         }
     }),
     register: (name, email, password, deviceId) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b;
+        var _a, _b, _c, _d;
         set({ isLoading: true, error: null });
         try {
             const response = yield axios_1.default.post('/jwt/register', {
@@ -80,26 +71,20 @@ exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, g
                 password_confirmation: password,
                 device_id: deviceId || crypto.randomUUID(),
             });
-            set({
-                token: response.data.data.token,
-                publicKey: response.data.data.public_key,
-                user: response.data.data.user,
-                isLoading: false,
-                isInitialized: true,
-            });
+            const token = response.data.token || ((_a = response.data.data) === null || _a === void 0 ? void 0 : _a.token);
+            const user = response.data.user || ((_b = response.data.data) === null || _b === void 0 ? void 0 : _b.user);
+            if (!token || !user)
+                throw new Error('Token or user not returned');
+            set({ token, user, isLoading: false, isInitialized: true });
         }
         catch (error) {
-            set({
-                error: ((_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.message) ||
-                    'Registration failed',
-                isLoading: false,
-            });
+            set({ error: ((_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.message) || 'Registration failed', isLoading: false });
             throw error;
         }
     }),
     logout: () => __awaiter(void 0, void 0, void 0, function* () {
+        const token = get().token;
         try {
-            const token = get().token;
             if (token) {
                 yield axios_1.default.post('/jwt/logout', {}, {
                     headers: { Authorization: `Bearer ${token}` },
@@ -107,69 +92,42 @@ exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, g
             }
         }
         finally {
-            set({
-                token: null,
-                publicKey: null,
-                user: null,
-                isInitialized: true,
-            });
+            set({ token: null, user: null, isInitialized: true });
             react_1.router.visit('/login');
         }
     }),
     fetchUser: () => __awaiter(void 0, void 0, void 0, function* () {
         var _a;
-        const fullToken = get().token;
-        if (!fullToken)
+        const token = get().token;
+        if (!token)
             return;
-        const jwtToken = fullToken.split(':')[1];
         try {
             const response = yield axios_1.default.get('/jwt/user', {
-                headers: { Authorization: `Bearer ${jwtToken}` },
+                headers: { Authorization: `Bearer ${token}` },
             });
-            set({ user: response.data.data });
+            set({ user: response.data.user || response.data.data });
         }
         catch (error) {
-            if (axios_1.default.isAxiosError(error) &&
-                ((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) === 401) {
-                set({ token: null, publicKey: null, user: null });
+            if (((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) === 401) {
+                set({ token: null, user: null });
             }
             throw error;
         }
     }),
-    verifySignature: (data, signature) => __awaiter(void 0, void 0, void 0, function* () {
-        try {
-            if (!get().token)
-                return false;
-            const response = yield axios_1.default.post('/jwt/verify-signature', {
-                token: get().token,
-                data,
-                signature,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${get().token}`,
-                },
-            });
-            return response.data.status === 'success';
-        }
-        catch (_a) {
-            return false;
-        }
-    }),
-    getTokenFromSession: () => __awaiter(void 0, void 0, void 0, function* () {
+    refreshToken: () => __awaiter(void 0, void 0, void 0, function* () {
         var _a;
+        const token = get().token;
+        if (!token)
+            return;
         set({ isLoading: true });
         try {
-            const response = yield axios_1.default.get('/jwt/token');
-            if ((_a = response.data.data) === null || _a === void 0 ? void 0 : _a.token) {
-                set({
-                    token: response.data.data.token,
-                    publicKey: response.data.data.public_key,
-                });
-                yield get().fetchUser();
-            }
+            const response = yield axios_1.default.post('/jwt/refresh', {}, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            set({ token: response.data.token || ((_a = response.data.data) === null || _a === void 0 ? void 0 : _a.token) });
         }
         catch (error) {
-            // pas d’erreur levée si pas connecté en session
+            console.error('Token refresh failed', error);
         }
         finally {
             set({ isLoading: false });
@@ -177,9 +135,5 @@ exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, g
     }),
 }), {
     name: 'jwt-auth-storage',
-    partialize: (state) => ({
-        token: state.token,
-        publicKey: state.publicKey,
-        user: state.user,
-    }),
+    partialize: (state) => ({ token: state.token, user: state.user }),
 }));
