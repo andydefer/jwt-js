@@ -81,12 +81,13 @@ feature: ## Créer une nouvelle branche feature (usage: make feature NAME=branch
 # ================================
 # Release interactif
 # ================================
-
 release-interactive: ## Commit + push GitHub + version (patch/minor/major) + publish npm + tag
 	@read -p "Quel type de version ? (patch, minor, major) : " TYPE; \
 	if [ "$$TYPE" != "patch" ] && [ "$$TYPE" != "minor" ] && [ "$$TYPE" != "major" ]; then \
 		echo "❌ Type invalide !"; exit 1; \
 	fi; \
+	read -p "Message de commit (laissez vide pour 'Update project') : " COMMIT_MSG_INTERACTIVE; \
+	if [ -z "$$COMMIT_MSG_INTERACTIVE" ]; then COMMIT_MSG_INTERACTIVE="$(COMMIT_MSG)"; fi; \
 	BRANCH_CUR=$$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "$(BRANCH)"); \
 	if [ ! -d ".git" ]; then \
 		echo "📌 Initialisation du repo Git..."; \
@@ -97,7 +98,7 @@ release-interactive: ## Commit + push GitHub + version (patch/minor/major) + pub
 	if [ -n "$$(git status --porcelain)" ]; then \
 		echo "📌 Commit des changements..."; \
 		git add .; \
-		git commit -m "$(COMMIT_MSG)"; \
+		git commit -m "$$COMMIT_MSG_INTERACTIVE"; \
 	else \
 		echo "⚠️ Aucun changement à committer"; \
 	fi; \
