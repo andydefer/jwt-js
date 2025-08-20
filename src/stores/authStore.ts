@@ -1,8 +1,10 @@
+// stores/authStore.ts
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AuthState } from '../types';
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -48,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       register: async (name, email, password, deviceId) => {
+        console.log('Hello@')
         set({ isLoading: true, error: null });
         try {
           const response = await axios.post('/jwt/register', {
@@ -63,7 +66,11 @@ export const useAuthStore = create<AuthState>()(
 
           if (!token || !user) throw new Error('Token or user not returned');
 
+          // Met à jour le store
           set({ token, user, isLoading: false, isInitialized: true });
+
+          // Retourne le user pour usage immédiat
+          return user;
         } catch (error: any) {
           set({ error: error.response?.data?.message || 'Registration failed', isLoading: false });
           throw error;

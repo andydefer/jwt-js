@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useAuth = void 0;
+// hooks/useAuth.ts
 const react_1 = require("react");
 const authStore_1 = require("../stores/authStore");
 const useAuth = () => {

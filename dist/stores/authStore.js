@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useAuthStore = void 0;
+// stores/authStore.ts
 const react_1 = require("@inertiajs/react");
 const axios_1 = __importDefault(require("axios"));
 const zustand_1 = require("zustand");
@@ -62,6 +63,7 @@ exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, g
     }),
     register: (name, email, password, deviceId) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c, _d;
+        console.log('Hello@');
         set({ isLoading: true, error: null });
         try {
             const response = yield axios_1.default.post('/jwt/register', {
@@ -75,7 +77,10 @@ exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((set, g
             const user = response.data.user || ((_b = response.data.data) === null || _b === void 0 ? void 0 : _b.user);
             if (!token || !user)
                 throw new Error('Token or user not returned');
+            // Met à jour le store
             set({ token, user, isLoading: false, isInitialized: true });
+            // Retourne le user pour usage immédiat
+            return user;
         }
         catch (error) {
             set({ error: ((_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.message) || 'Registration failed', isLoading: false });

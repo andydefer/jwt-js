@@ -1,3 +1,4 @@
+// hooks/useAuth.ts
 import { useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import type { User } from '../types';
@@ -8,7 +9,7 @@ interface UseAuthReturn {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string, deviceId?: string) => Promise<void>;
-  register: (name: string, email: string, password: string, deviceId?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, deviceId?: string) => Promise<User>;
   logout: () => void;
 }
 

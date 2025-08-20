@@ -16,7 +16,7 @@ export interface AuthState {
 
   // Authentification
   login: (email: string, password: string, deviceId?: string) => Promise<void>;
-  register: (name: string, email: string, password: string, deviceId?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, deviceId?: string) => Promise<User>;
   logout: () => void;
 
   // Récupération des infos utilisateur

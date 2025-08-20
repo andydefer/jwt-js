@@ -11,7 +11,7 @@ export interface AuthState {
     isInitialized: boolean;
     initialize: () => Promise<void>;
     login: (email: string, password: string, deviceId?: string) => Promise<void>;
-    register: (name: string, email: string, password: string, deviceId?: string) => Promise<void>;
+    register: (name: string, email: string, password: string, deviceId?: string) => Promise<User>;
     logout: () => void;
     fetchUser: () => Promise<void>;
     refreshToken: () => Promise<void>;
