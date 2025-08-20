@@ -25,3 +25,14 @@ export interface AuthState {
   // Rotation du token
   refreshToken: () => Promise<void>;
 }
+
+export interface AuthConfig {
+  baseURL: string;                 // Base URL de l'API
+  routes: {
+    login: string;
+    register: string;
+    logout: string;
+    fetchUser: string;
+    refreshToken: string;
+  };
+}

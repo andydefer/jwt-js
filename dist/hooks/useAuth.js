@@ -1,12 +1,9 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.useAuth = void 0;
 // hooks/useAuth.ts
-const react_1 = require("react");
-const authStore_1 = require("../stores/authStore");
-const useAuth = () => {
-    const { token, user, isLoading, error, login, logout, register, initialize, isInitialized, } = (0, authStore_1.useAuthStore)();
-    (0, react_1.useEffect)(() => {
+import { useEffect } from 'react';
+import { useAuthStore } from '../stores/authStore';
+export const useAuth = () => {
+    const { token, user, isLoading, error, login, logout, register, initialize, isInitialized, } = useAuthStore();
+    useEffect(() => {
         if (!isInitialized) {
             initialize().catch(() => {
                 // On ignore les erreurs d'auto-login
@@ -23,4 +20,3 @@ const useAuth = () => {
         logout,
     };
 };
-exports.useAuth = useAuth;

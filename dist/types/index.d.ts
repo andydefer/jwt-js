@@ -16,3 +16,13 @@ export interface AuthState {
     fetchUser: () => Promise<void>;
     refreshToken: () => Promise<void>;
 }
+export interface AuthConfig {
+    baseURL: string;
+    routes: {
+        login: string;
+        register: string;
+        logout: string;
+        fetchUser: string;
+        refreshToken: string;
+    };
+}
